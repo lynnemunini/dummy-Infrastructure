@@ -2,4 +2,4 @@
 **Required Infrastructure to deploy the dummy application.**
 
 ![Infrastructure SVG](dummy.svg)
-# **NOTE** This is a dummy infrastructure.
+**NOTE**: This is a dummy infrastructure.
