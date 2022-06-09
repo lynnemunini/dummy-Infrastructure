@@ -1,4 +1,4 @@
 # IG-clone-dummy-Infrastructure
-**Required Infrastructure to deploy a dummy application.**
+**Required Infrastructure to deploy the dummy application.**
 
 ![Infrastructure SVG](dummy.svg)
