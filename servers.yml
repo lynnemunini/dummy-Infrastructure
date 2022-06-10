@@ -231,7 +231,7 @@ Resources:
                 KeyName: !Ref KeyName
                 # TODO: Create Security Group with the name AppServerSecurityGroup
                 SecurityGroups:
-                    - !Ref AppSecurityGroup
+                    - !Ref AppServerSecurityGroup
                 InstanceType: !Ref InstanceType
                 BlockDeviceMappings:
                     - DeviceName: /dev/sdk
@@ -252,12 +252,23 @@ Resources:
             MinSize: 4
             MaxSize: 7
             DesiredCapacity: 4
-            # TODO: Create target group with the name TargetGroup
+            # TODO: Create target group with the name AppTargetGroup
             TargetGroupARNs:
-                - !Ref TargetGroup
+                - !Ref AppTargetGroup
             Tags:
                 - Key: Name
                   Value: !Sub ${EnvironmentName} App AutoScalingGroup
+
+    #Creating Load Balancer on a public subnet
+    AppLoadBalancer:
+        Type:
+            AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Subnets:
+                - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+                - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+            SecurityGroups:
+                - !Ref LoadBalancerSecurityGroup
 
     #Creating Server Security Group
     AppServerSecurityGroup:
@@ -270,7 +281,7 @@ Resources:
                 Fn::ImportValue:
                     !Sub "${EnvironmentName}-VPCID"
             SecurityGroupIngress:
-                - IpProtocol: tcp
+                - IpProtocol: http
                   FromPort: 80
                   ToPort: 80
                   CidrIp: 0.0.0.0/0
@@ -279,6 +290,42 @@ Resources:
                   FromPort: -1
                   ToPort: -1
                   CidrIp: 0.0.0.0/0 # Not for production use
+
+    #Creating Load Balancersecurity Group
+    LoadBalancerSecurityGroup:
+        Type:
+            AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription:
+                !Sub ${EnvironmentName} Load Balancer Security Group
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+                - IpProtocol: http
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+    
+    #Creating Listener
+    LoadBalancerListener:
+        Type:
+            AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            LoadBalancerArn:
+                Ref: AppLoadBalancer
+            Protocol: HTTP
+            Port: 80
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn:
+                    Ref: AppTargetGroup
+
             
 Outputs: 
 
