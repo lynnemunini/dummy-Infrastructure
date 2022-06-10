@@ -229,15 +229,16 @@ Resources:
                         echo "Udacity Demo Web Server Up and Running!" > index.html
                 ImageId: !Ref UbuntuServerAMI
                 KeyName: !Ref KeyName
-                # TODO: Create Security Group with the name SecurityGroup
+                # TODO: Create Security Group with the name AppServerSecurityGroup
                 SecurityGroups:
-                    - !Ref SecurityGroup
+                    - !Ref AppSecurityGroup
                 InstanceType: !Ref InstanceType
                 BlockDeviceMappings:
                     - DeviceName: /dev/sdk
                       Ebs:
                         VolumeSize: !Ref VolumeSize
-                        # VolumeType: gp2
+                        VolumeType: gp2
+    
     
     AppAutoScalingGroup:
         Type:
@@ -257,6 +258,27 @@ Resources:
             Tags:
                 - Key: Name
                   Value: !Sub ${EnvironmentName} App AutoScalingGroup
+
+    #Creating Server Security Group
+    AppServerSecurityGroup:
+        Type:
+            AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription:
+                !Sub ${EnvironmentName} App Server Security Group
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+                - IpProtocol: -1
+                  FromPort: -1
+                  ToPort: -1
+                  CidrIp: 0.0.0.0/0 # Not for production use
             
 Outputs: 
 
