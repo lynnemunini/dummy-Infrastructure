@@ -24,5 +24,21 @@
 	{
 		"ParameterKey": "PrivateSubnet2CIDR",
 		"ParameterValue": "10.0.3.0/24"
+	},
+	{
+		"ParameterKey": "UbuntuServerAMI",
+		"ParameterValue": "ami-0022f774911c1d690"
+	},
+	{
+		"ParameterKey": "InstanceType",
+		"ParameterValue": "t2.micro"
+	},
+	{
+		"ParameterKey": "KeyName",
+		"ParameterValue": "Proj2"
+	},
+	{
+		"ParameterKey": "VolumeSize",
+		"ParameterValue": "10"
 	}
 ]
