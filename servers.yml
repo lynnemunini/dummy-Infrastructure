@@ -72,6 +72,8 @@ Resources:
             InternetGatewayId: !Ref InternetGateway
             VpcId: !Ref VPC
 
+    # Subnets
+
     PublicSubnet1: 
         Type: AWS::EC2::Subnet
         Properties:
@@ -238,8 +240,7 @@ Resources:
                     - DeviceName: /dev/sdk
                       Ebs:
                         VolumeSize: !Ref VolumeSize
-                        VolumeType: gp2
-    
+                        VolumeType: gp2    
     
     AppAutoScalingGroup:
         Type:
@@ -290,7 +291,7 @@ Resources:
                 - IpProtocol: -1
                   FromPort: -1
                   ToPort: -1
-                  CidrIp: 0.0.0.0/0 # Not for production use
+                  CidrIp: 0.0.0.0/0 #Not for production use
 
     #Creating Load Balancersecurity Group
     LoadBalancerSecurityGroup:
@@ -365,15 +366,9 @@ Resources:
             UnhealthyThresholdCount: 5
             Matcher:
                 HttpCode: "200"
-            TargetType: LoadBalancer
 
-            
+#Outputs for the VPC            
 Outputs: 
-
-  # This is also optional.
-  # Bonus points for useful outputs!
-  # for example, if you create a Load Balancer
-  # it's nice to output the URL to it here, so that we don't have to go to the console to get it.
 
     VPC: 
         Description: A reference to the created VPC
