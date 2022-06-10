@@ -439,5 +439,6 @@ Outputs:
         Description: A reference to the created Load Balancer
         Value: !Ref AppLoadBalancer
         Export:
-          Name: !Sub ${EnvironmentName}-APP-LB
+            #Adding http:// on load balancer url for easier access
+            Name: !Join [ "http://", [ !GetAtt AppLoadBalancer.DnsName ]]
     
