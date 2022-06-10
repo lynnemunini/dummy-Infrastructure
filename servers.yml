@@ -365,6 +365,19 @@ Resources:
             Matcher:
                 HttpCode: "200"
 
+    #Creating IAM Role
+    AppIAMRole:
+        Type:
+            AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                        Service:
+                            - s3.amazonaws.com
+
 #Outputs for the VPC            
 Outputs: 
 
