@@ -342,6 +342,30 @@ Resources:
                   TargetGroupArn:
                     Ref: AppTargetGroup
             Priority: 1
+
+    #Creating Target Group
+    AppTargetGroup:
+        Type:
+            AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            Name:
+                !Sub ${EnvironmentName} App Target Group
+            Protocol: HTTP
+            Port: 80
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-VPCID"
+            HealthCheckProtocol: HTTP
+            HealthCheckPort: "80"
+            HealthCheckPath: "/"
+            HealthCheckIntervalSeconds: 30
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 2
+            UnhealthyThresholdCount: 5
+            Matcher:
+                HttpCode: "200"
+            TargetType: LoadBalancer
+
             
 Outputs: 
 
@@ -357,12 +381,12 @@ Outputs:
 # when you visit the IP address of this server with your web browser
 #Here it is:
 #
-         #!/bin/bash
-         apt-get update -y
-         apt-get install apache2 -y
-         systemctl start apache2.service
-         cd /var/www/html
-         echo "Udacity Demo Web Server Up and Running!" > index.html
+        #  #!/bin/bash
+        #  apt-get update -y
+        #  apt-get install apache2 -y
+        #  systemctl start apache2.service
+        #  cd /var/www/html
+        #  echo "Udacity Demo Web Server Up and Running!" > index.html
     VPC: 
         Description: A reference to the created VPC
         Value: !Ref VPC
