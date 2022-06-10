@@ -40,5 +40,13 @@
 	{
 		"ParameterKey": "VolumeSize",
 		"ParameterValue": "10"
+	},
+	{
+		"ParameterKey": "AWSRegion",
+		"ParameterValue": "us-east-1"
+	},
+	{
+		"ParameterKey": "AwsAccountId",
+		"ParameterValue": "351669278598"
 	}
 ]

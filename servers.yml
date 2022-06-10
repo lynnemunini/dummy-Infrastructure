@@ -45,7 +45,14 @@ Parameters:
     VolumeSize:
         Description: Please enter the size of the EBS volume you would like to use
         Type: String
+
+    AWSRegion:
+        Description: Please enter the AWS region you would like to use
+        Type: String
     
+    AWSAccountID:
+        Description: Please enter the AWS account ID you would like to use
+        Type: String
 
 Resources:
     # Creating VPC
@@ -396,10 +403,7 @@ Resources:
                           - 's3:*'
                       Resource: '*'
             Roles:
-                - !Ref AppIAMRole
-
-
-            
+                - !Ref AppIAMRole    
                           
             
 
@@ -468,10 +472,10 @@ Outputs:
     
     AppLoadBalancer:
         Description: A reference to the created Load Balancer
-        Value: !Ref AppLoadBalancer
+        #Adding http:// on load balancer url for easier access
+        Value: !Join [ "", [ "arn:aws:elasticloadbalancing:", !Ref AWSRegion, ":", !Ref AWSAccountId, ":loadbalancer/app/", !Ref AppLoadBalancer ]] 
         Export:
-            #Adding http:// on load balancer url for easier access
-            Name: !Join [ "http://", [ !GetAtt AppLoadBalancer.DnsName ]]
+            Name: !Sub ${EnvironmentName}-APP-LB-URL
 
     AppIAMRole:
         Description: A reference to the created IAM Role
