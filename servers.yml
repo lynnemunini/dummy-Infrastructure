@@ -232,7 +232,6 @@ Resources:
                         echo "Udacity Demo Web Server Up and Running!" > index.html
                 ImageId: !Ref UbuntuServerAMI
                 KeyName: !Ref KeyName
-                # TODO: Create Security Group with the name AppServerSecurityGroup
                 SecurityGroups:
                     - !Ref AppServerSecurityGroup
                 InstanceType: !Ref InstanceType
@@ -254,7 +253,6 @@ Resources:
             MinSize: 4
             MaxSize: 7
             DesiredCapacity: 4
-            # TODO: Create target group with the name AppTargetGroup
             TargetGroupARNs:
                 - !Ref AppTargetGroup
             Tags:
