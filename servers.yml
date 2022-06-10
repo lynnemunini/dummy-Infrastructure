@@ -434,3 +434,10 @@ Outputs:
         Value: !Ref PrivateSubnet2
         Export:
           Name: !Sub ${EnvironmentName}-PRI2-SN
+    
+    AppLoadBalancer:
+        Description: A reference to the created Load Balancer
+        Value: !Ref AppLoadBalancer
+        Export:
+          Name: !Sub ${EnvironmentName}-APP-LB
+    
