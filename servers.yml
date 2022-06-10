@@ -376,7 +376,32 @@ Resources:
                     - Effect: Allow
                       Principal:
                         Service:
-                            - s3.amazonaws.com
+                            - ec2.amazonaws.com
+                        Action:
+                            - sts:AssumeRole
+            Path: /
+    
+    #Creating policy to be associated with the IAM Role
+    AppIAMPolicy:
+        Type:
+            AWS::IAM::Policy
+        Properties:
+            PolicyName:
+                !Sub ${EnvironmentName} App IAM Policy
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - 's3:*'
+                      Resource: '*'
+            Roles:
+                - !Ref AppIAMRole
+
+
+            
+                          
+            
 
 #Outputs for the VPC            
 Outputs: 
@@ -447,4 +472,10 @@ Outputs:
         Export:
             #Adding http:// on load balancer url for easier access
             Name: !Join [ "http://", [ !GetAtt AppLoadBalancer.DnsName ]]
+
+    AppIAMRole:
+        Description: A reference to the created IAM Role
+        Value: !Ref AppIAMRole
+        Export:
+            Name: !Sub ${EnvironmentName}-IAM-ROLE
     
