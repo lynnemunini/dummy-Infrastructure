@@ -220,6 +220,7 @@ Resources:
         Properties:
             UserData:
                 Fn::Base64:
+                # Install Apache Web Server, Start it, and create an index.html that will be displayed on the web server
                     !Sub |
                         #!/bin/bash
                         apt-get update -y
@@ -374,19 +375,6 @@ Outputs:
   # for example, if you create a Load Balancer
   # it's nice to output the URL to it here, so that we don't have to go to the console to get it.
 
-# Sample UserData
-# When creating your Launch Configuration, you may need a UserData script
-# here's one that you can use for Ubuntu Linux that will:
-# Install Apache Web Server, Start it, and create an index.html that will be displayed
-# when you visit the IP address of this server with your web browser
-#Here it is:
-#
-        #  #!/bin/bash
-        #  apt-get update -y
-        #  apt-get install apache2 -y
-        #  systemctl start apache2.service
-        #  cd /var/www/html
-        #  echo "Udacity Demo Web Server Up and Running!" > index.html
     VPC: 
         Description: A reference to the created VPC
         Value: !Ref VPC
