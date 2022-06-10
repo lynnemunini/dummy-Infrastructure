@@ -27,7 +27,7 @@
 	},
 	{
 		"ParameterKey": "UbuntuServerAMI",
-		"ParameterValue": "ami-0022f774911c1d690"
+		"ParameterValue": "ami-005de95e8ff495156"
 	},
 	{
 		"ParameterKey": "InstanceType",
