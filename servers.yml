@@ -194,8 +194,50 @@ Resources:
             RouteTableId: !Ref PrivateRouteTable2
             SubnetId: !Ref PrivateSubnet2
 
-   
+    #Creating Servers
+    AppLaunchConfiguration:
+        Type:
+            AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            UserData:
+                Fn::Base64:
+                    !Sub |
+                        #!/bin/bash
+                        apt-get update -y
+                        apt-get install apache2 -y
+                        systemctl start apache2.service
+                        cd /var/www/html
+                        echo "Udacity Demo Web Server Up and Running!" > index.html
+                ImageId: !Ref UbuntuServer
+                KeyName: !Ref KeyName
+                SecurityGroups:
+                    - !Ref SecurityGroup
+                InstanceType: !Ref InstanceType
+                BlockDeviceMappings:
+                    - DeviceName: /dev/sdk
+                      Ebs:
+                          VolumeSize: !Ref VolumeSize
+    
+    AppAutoScalingGroup:
+        Type:
+            AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            VPCZoneIdentifier:
+            - Fn::ImportValue:
+                !Sub "${EnvironmentName}-PRIV-NETS"
+            LaunchConfigurationName:
+                Ref: AppLaunchConfiguration
+            MinSize: 4
+            MaxSize: 7
+            DesiredCapacity: 4
+            TargetGroupARNs:
+                - !Ref TargetGroup
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} App AutoScalingGroup
+            
 Outputs: 
+
   # This is also optional.
   # Bonus points for useful outputs!
   # for example, if you create a Load Balancer
@@ -208,12 +250,12 @@ Outputs:
 # when you visit the IP address of this server with your web browser
 #Here it is:
 #
-#          #!/bin/bash
-#          apt-get update -y
-#          apt-get install apache2 -y
-#          systemctl start apache2.service
-#          cd /var/www/html
-#          echo "Udacity Demo Web Server Up and Running!" > index.html
+         #!/bin/bash
+         apt-get update -y
+         apt-get install apache2 -y
+         systemctl start apache2.service
+         cd /var/www/html
+         echo "Udacity Demo Web Server Up and Running!" > index.html
     VPC: 
         Description: A reference to the created VPC
         Value: !Ref VPC
