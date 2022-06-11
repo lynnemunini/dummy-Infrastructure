@@ -33,7 +33,7 @@ Parameters:
     UbuntuServerAMI:
         Description: Please enter the AMI ID for the Ubuntu Server
         Type: String
-    
+
     KeyName:
         Description: Please enter the name of an existing EC2 KeyPair to enable SSH access to the instance
         Type: String
@@ -214,67 +214,7 @@ Resources:
             RouteTableId: !Ref PrivateRouteTable2
             SubnetId: !Ref PrivateSubnet2
 
-    #Creating Servers
-    AppLaunchConfiguration:
-        Type:
-            AWS::AutoScaling::LaunchConfiguration
-        Properties:
-            UserData:
-                Fn::Base64:
-                # Install Apache Web Server, Start it, and create an index.html that will be displayed on the web server
-                    !Sub |
-                        #!/bin/bash
-                        apt-get update -y
-                        apt-get install apache2 -y
-                        systemctl start apache2.service
-                        cd /var/www/html
-                        echo "Udacity Demo Web Server Up and Running!" > index.html
-                ImageId: !Ref UbuntuServerAMI
-                KeyName: !Ref KeyName
-                SecurityGroups:
-                    - !Ref AppServerSecurityGroup
-                InstanceType: !Ref InstanceType
-                BlockDeviceMappings:
-                    - DeviceName: /dev/sdk
-                      Ebs:
-                        VolumeSize: !Ref VolumeSize
-                        VolumeType: gp2    
-    
-    AppAutoScalingGroup:
-        Type:
-            AWS::AutoScaling::AutoScalingGroup
-        Properties:
-            DependsOn:
-                - PrivateSubnet1
-                - PrivateSubnet2
-                - LaunchConfiguration
-            VPCZoneIdentifier:
-                - !Ref PrivateSubnet1
-                - !Ref PrivateSubnet2
-            LaunchConfigurationName:
-                Ref: AppLaunchConfiguration
-            MinSize: 4
-            MaxSize: 7
-            DesiredCapacity: 4
-            TargetGroupARNs:
-                - !Ref AppTargetGroup
-            Tags:
-                - Key: Name
-                  Value: !Sub ${EnvironmentName} App AutoScalingGroup
-
-    #Creating Load Balancer on a public subnet
-    AppLoadBalancer:
-        DependsOn: 
-            - PublicSubnet1
-            - PublicSubnet2
-        Type:
-            AWS::ElasticLoadBalancingV2::LoadBalancer
-        Properties:
-            Subnets: 
-                - !Ref PublicSubnet1
-                - !Ref PublicSubnet2
-            SecurityGroups:
-                - !Ref LoadBalancerSecurityGroup
+    # Security Groups
 
     #Creating Server Security Group
     AppServerSecurityGroup:
@@ -317,6 +257,68 @@ Resources:
                   FromPort: 80
                   ToPort: 80
                   CidrIp: 0.0.0.0/0
+
+    #Creating Servers
+    AppLaunchConfiguration:
+        Type:
+            AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            UserData:
+                Fn::Base64:
+                # Install Apache Web Server, Start it, and create an index.html that will be displayed on the web server
+                    !Sub |
+                        #!/bin/bash
+                        apt-get update -y
+                        apt-get install apache2 -y
+                        systemctl start apache2.service
+                        cd /var/www/html
+                        echo "Udacity Demo Web Server Up and Running!" > index.html
+                ImageId: !Ref UbuntuServerAMI
+                KeyName: !Ref KeyName
+                SecurityGroups:
+                    - !Ref AppServerSecurityGroup
+                InstanceType: !Ref InstanceType
+                BlockDeviceMappings:
+                    - DeviceName: /dev/sdk
+                      Ebs:
+                        VolumeSize: !Ref VolumeSize
+                        VolumeType: gp2    
+    
+    AppAutoScalingGroup:
+        Type:
+            AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            DependsOn:
+                - PrivateSubnet1
+                - PrivateSubnet2
+                - LaunchConfiguration
+            VPCZoneIdentifier:
+                - !Ref PrivateSubnet1
+                - !Ref PrivateSubnet2
+            LaunchConfigurationName:
+                Ref: AppLaunchConfiguration
+            MinSize: 4
+            MaxSize: 6
+            DesiredCapacity: 4
+            TargetGroupARNs:
+                - !Ref AppTargetGroup
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} App AutoScalingGroup
+
+    #Creating Load Balancer on a public subnet
+    AppLoadBalancer:
+        DependsOn: 
+            - PublicSubnet1
+            - PublicSubnet2
+        Type:
+            AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Subnets: 
+                - !Ref PublicSubnet1
+                - !Ref PublicSubnet2
+            SecurityGroups:
+                - !Ref LoadBalancerSecurityGroup
     
     #Creating Listener
     LoadBalancerListener:
@@ -337,8 +339,7 @@ Resources:
         Type:
             AWS::ElasticLoadBalancingV2::ListenerRule
         Properties:
-            ListenerArn:
-                Ref: LoadBalancerListener
+            ListenerArn: !Ref LoadBalancerListener
             Conditions:
                 - Field: path-pattern
                   Values:
@@ -368,8 +369,6 @@ Resources:
             HealthCheckTimeoutSeconds: 5
             HealthyThresholdCount: 2
             UnhealthyThresholdCount: 5
-            Matcher:
-                HttpCode: "200"
 
     #Creating IAM Role
     AppIAMRole:
@@ -421,3 +420,4 @@ Outputs:
         Export:
             Name: !Sub ${EnvironmentName}-IAM-ROLE
     
+# The following resource(s) failed to create: [InternetGateway, PrivateRouteTable1, PrivateSubnet1, AppTargetGroup, AppServerSecurityGroup, PublicRouteTable]. Rollback requested by user.

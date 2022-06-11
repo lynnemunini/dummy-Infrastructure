@@ -1,0 +1,208 @@
+Parameters:
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        
+    # Server Parameters
+    UbuntuServerAMI:
+        Description: Please enter the AMI ID for the Ubuntu Server
+        Type: String
+
+    KeyName:
+        Description: Please enter the name of an existing EC2 KeyPair to enable SSH access to the instance
+        Type: String
+    
+    InstanceType:
+        Description: Please enter the instance type you would like to use
+        Type: String
+    
+    VolumeSize:
+        Description: Please enter the size of the EBS volume you would like to use
+        Type: String
+
+
+Resources:
+    # Security Groups
+
+    # Creating Load Balancer Security Group
+    LoadBalancerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Load Balancer Security Group
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+
+    # Creating App Server Security Group
+    AppServerSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: App Server Security Group
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvironmentName}-VPCID"
+            SecurityGroupIngress:
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+            - IpProtocol: tcp
+              FromPort: 22
+              ToPort: 22
+              CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+            - IpProtocol: -1
+              FromPort: -1
+              ToPort: -1
+              CidrIp: 0.0.0.0/0
+
+    #Creating Servers
+    AppLaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            IamInstanceProfile:
+                Ref: AppInstanceProfile
+            UserData:
+                Fn::Base64: !Sub |
+                        #!/bin/bash
+                        apt-get update -y
+                        apt-get install apache2 -y
+                        systemctl start apache2.service
+                        cd /var/www/html
+                        echo "Udacity Demo Web Server Up and Running!" > index.html       
+            ImageId: !Sub "${UbuntuServerAMI}"
+            KeyName: !Sub "${KeyName}"
+            SecurityGroups:
+            - Ref: AppServerSecGroup
+            InstanceType: !Sub "${InstanceType}"
+            BlockDeviceMappings:
+            - DeviceName: "/dev/sdk"
+              Ebs:
+                VolumeSize: !Sub "${VolumeSize}"
+                VolumeType: gp2
+
+    #Creating AutoScaling Group
+    AppAutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            VPCZoneIdentifier:
+            - Fn::ImportValue: 
+                !Sub "${EnvironmentName}-PRIV-NETS"
+            LaunchConfigurationName:
+                Ref: AppLaunchConfiguration
+            MinSize: '4'
+            MaxSize: '6'
+            TargetGroupARNs:
+            - Ref: AppTargetGroup
+
+    #Creating Load Balancer on a public subnet
+    AppLoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Subnets:
+            - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+            - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+            SecurityGroups:
+            - Ref: LoadBalancerSecurityGroup
+
+    #Creating Listener
+    LoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            DefaultActions:
+            - Type: forward
+              TargetGroupArn:
+                Ref: AppTargetGroup
+            LoadBalancerArn:
+              Ref: AppLoadBalancer
+            Port: '80'
+            Protocol: HTTP
+
+    #Creating Listener Rule
+    LoadBalancerListenerRule:
+        Type: AWS::ElasticLoadBalancingV2::ListenerRule
+        Properties:
+            Actions:
+            - Type: forward
+              TargetGroupArn: !Ref 'AppTargetGroup'
+            Conditions:
+            - Field: path-pattern
+              Values: [/]
+            ListenerArn: !Ref 'LoadBalancerListener'
+            Priority: 1
+
+    #Creating Target Group
+    AppTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            HealthCheckIntervalSeconds: 10
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 8
+            HealthyThresholdCount: 2
+            Port: 80
+            Protocol: HTTP
+            UnhealthyThresholdCount: 5
+            VpcId: 
+                Fn::ImportValue:
+                  Fn::Sub: "${EnvironmentName}-VPCID"
+
+    #Creating IAM Role to allow EC2 Instances to access the s3 service
+    AppInstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Path: /
+            Roles:
+            - !Ref IAMRole
+    
+    #Creating IAM Role
+    IAMRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Principal:
+                    Service: ec2.amazonaws.com
+                  Action: sts:AssumeRole
+            Path: /
+            Policies:
+            - PolicyName: AppServerPolicy
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                  - s3:*
+                  Resource:
+                  - '*'              
+
+
+#Outputs for the VPC            
+Outputs: 
+    AppLoadBalancer:
+        Description: A reference to the created Load Balancer
+        #Adding http:// on load balancer url for easier access
+        Value: 
+            Fn::Join:
+                - ""
+                - ["http://", Fn::GetAtt: [AppLoadBalancer,DNSName]]
+        Export:
+            Name: !Sub ${EnvironmentName}-APP-LB-URL
+
+    AppIAMRole:
+        Description: A reference to the created IAM Role
+        Value: !Ref IAMRole
+        Export:
+            Name: !Sub ${EnvironmentName}-IAM-ROLE
