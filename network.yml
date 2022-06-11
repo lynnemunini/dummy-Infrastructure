@@ -1,3 +1,7 @@
+Description: >
+  Lynne Munini / 2022
+  This is the Udagram network configuration file.
+  Use it to configure the network interfaces.
 
 Parameters:
 
@@ -32,6 +36,7 @@ Parameters:
 
 Resources:
 
+    #Creating VPC
     VPC: 
         Type: AWS::EC2::VPC
         Properties:
@@ -41,19 +46,22 @@ Resources:
                 - Key: Name 
                   Value: !Ref EnvironmentName
 
+    #Allows VPC to connect to the internet
     InternetGateway:
         Type: AWS::EC2::InternetGateway
         Properties:
             Tags:
                 - Key: Name
                   Value: !Ref EnvironmentName
-            
+
+    #Attaches the Internet Gateway to the VPC        
     InternetGatewayAttachment:
         Type: AWS::EC2::VPCGatewayAttachment
         Properties:
             InternetGatewayId: !Ref InternetGateway
             VpcId: !Ref VPC
 
+    #Subnets
     PublicSubnet1: 
         Type: AWS::EC2::Subnet
         Properties:
@@ -98,30 +106,35 @@ Resources:
                 - Key: Name 
                   Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
 
+    #Elastic IP to the public subnet1
     NatGateway1EIP:
         Type: AWS::EC2::EIP
         DependsOn: InternetGatewayAttachment
         Properties: 
             Domain: vpc
 
+    #Elastic IP to the public subnet2
     NatGateway2EIP:
         Type: AWS::EC2::EIP
         DependsOn: InternetGatewayAttachment
         Properties:
             Domain: vpc
 
+    #Nat Gateway to the public subnet1
     NatGateway1: 
         Type: AWS::EC2::NatGateway
         Properties: 
             AllocationId: !GetAtt NatGateway1EIP.AllocationId
             SubnetId: !Ref PublicSubnet1
 
+    #Nat Gateway to the public subnet2
     NatGateway2: 
         Type: AWS::EC2::NatGateway
         Properties:
             AllocationId: !GetAtt NatGateway2EIP.AllocationId
             SubnetId: !Ref PublicSubnet2
 
+    #Route Table
     PublicRouteTable:
         Type: AWS::EC2::RouteTable
         Properties: 
@@ -148,8 +161,7 @@ Resources:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref PublicRouteTable
-            SubnetId: !Ref PublicSubnet2
-    
+            SubnetId: !Ref PublicSubnet2    
 
     PrivateRouteTable1:
         Type: AWS::EC2::RouteTable
