@@ -46,14 +46,6 @@ Parameters:
         Description: Please enter the size of the EBS volume you would like to use
         Type: String
 
-    AWSRegion:
-        Description: Please enter the AWS region you would like to use
-        Type: String
-    
-    AWSAccountID:
-        Description: Please enter the AWS account ID you would like to use
-        Type: String
-
 Resources:
     # Creating VPC
     VPC: 
@@ -252,9 +244,13 @@ Resources:
         Type:
             AWS::AutoScaling::AutoScalingGroup
         Properties:
+            DependsOn:
+                - PrivateSubnet1
+                - PrivateSubnet2
+                - LaunchConfiguration
             VPCZoneIdentifier:
-            - Fn::ImportValue:
-                !Sub "${EnvironmentName}-PRIV-NETS"
+                - !Ref PrivateSubnet1
+                - !Ref PrivateSubnet2
             LaunchConfigurationName:
                 Ref: AppLaunchConfiguration
             MinSize: 4
@@ -268,12 +264,15 @@ Resources:
 
     #Creating Load Balancer on a public subnet
     AppLoadBalancer:
+        DependsOn: 
+            - PublicSubnet1
+            - PublicSubnet2
         Type:
             AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
-            Subnets:
-                - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
-                - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+            Subnets: 
+                - !Ref PublicSubnet1
+                - !Ref PublicSubnet2
             SecurityGroups:
                 - !Ref LoadBalancerSecurityGroup
 
@@ -282,11 +281,11 @@ Resources:
         Type:
             AWS::EC2::SecurityGroup
         Properties:
+            DependsOn:
+                - VPC
             GroupDescription:
                 !Sub ${EnvironmentName} App Server Security Group
-            VpcId:
-                Fn::ImportValue:
-                    !Sub "${EnvironmentName}-VPCID"
+            VpcId: !Ref VPC
             SecurityGroupIngress:
                 - IpProtocol: http
                   FromPort: 80
@@ -300,14 +299,14 @@ Resources:
 
     #Creating Load Balancersecurity Group
     LoadBalancerSecurityGroup:
+        DependsOn:
+            - VPC
         Type:
             AWS::EC2::SecurityGroup
         Properties:
             GroupDescription:
                 !Sub ${EnvironmentName} Load Balancer Security Group
-            VpcId:
-                Fn::ImportValue:
-                    !Sub "${EnvironmentName}-VPCID"
+            VpcId: !Ref VPC
             SecurityGroupIngress:
                 - IpProtocol: http
                   FromPort: 80
@@ -352,6 +351,8 @@ Resources:
 
     #Creating Target Group
     AppTargetGroup:
+        DependsOn:
+            - VPC
         Type:
             AWS::ElasticLoadBalancingV2::TargetGroup
         Properties:
@@ -359,9 +360,7 @@ Resources:
                 !Sub ${EnvironmentName} App Target Group
             Protocol: HTTP
             Port: 80
-            VpcId:
-                Fn::ImportValue:
-                    !Sub "${EnvironmentName}-VPCID"
+            VpcId: !Ref VPC
             HealthCheckProtocol: HTTP
             HealthCheckPort: "80"
             HealthCheckPath: "/"
@@ -391,7 +390,7 @@ Resources:
     #Creating policy to be associated with the IAM Role
     AppIAMPolicy:
         Type:
-            AWS::IAM::Policy
+            AWS::IAM::ManagedPolicy
         Properties:
             PolicyName:
                 !Sub ${EnvironmentName} App IAM Policy
@@ -409,71 +408,10 @@ Resources:
 
 #Outputs for the VPC            
 Outputs: 
-
-    VPC: 
-        Description: A reference to the created VPC
-        Value: !Ref VPC
-        Export:
-          Name: !Sub ${EnvironmentName}-VPCID
-
-    VPCPublicRouteTable:
-        Description: Public Routing
-        Value: !Ref PublicRouteTable
-        Export:
-          Name: !Sub ${EnvironmentName}-PUB-RT
-
-    VPCPrivateRouteTable1:
-        Description: Private Routing AZ1
-        Value: !Ref PrivateRouteTable1
-        Export:
-          Name: !Sub ${EnvironmentName}-PRI1-RT
-
-    VPCPrivateRouteTable2:
-        Description: Private Routing AZ2
-        Value: !Ref PrivateRouteTable2
-        Export:
-          Name: !Sub ${EnvironmentName}-PRI2-RT
-
-    PublicSubnets:
-        Description: A list of the public subnets
-        Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]]
-        Export:
-          Name: !Sub ${EnvironmentName}-PUB-NETS
-
-    PrivateSubnets:
-        Description: A list of the private subnets
-        Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]]
-        Export:
-          Name: !Sub ${EnvironmentName}-PRIV-NETS
-
-    PublicSubnet1:
-        Description: A reference to the public subnet in the 1st Availability Zone
-        Value: !Ref PublicSubnet1
-        Export:
-          Name: !Sub ${EnvironmentName}-PUB1-SN
-
-    PublicSubnet2: 
-        Description: A reference to the public subnet in the 2nd Availability Zone
-        Value: !Ref PublicSubnet2
-        Export:
-          Name: !Sub ${EnvironmentName}-PUB2-SN
-
-    PrivateSubnet1:
-        Description: A reference to the private subnet in the 1st Availability Zone
-        Value: !Ref PrivateSubnet1
-        Export:
-          Name: !Sub ${EnvironmentName}-PRI1-SN
-
-    PrivateSubnet2: 
-        Description: A reference to the private subnet in the 2nd Availability Zone
-        Value: !Ref PrivateSubnet2
-        Export:
-          Name: !Sub ${EnvironmentName}-PRI2-SN
-    
     AppLoadBalancer:
         Description: A reference to the created Load Balancer
         #Adding http:// on load balancer url for easier access
-        Value: !Join [ "", [ "arn:aws:elasticloadbalancing:", !Ref AWSRegion, ":", !Ref AWSAccountId, ":loadbalancer/app/", !Ref AppLoadBalancer ]] 
+        Value: !Sub http://!GetAtt AppLoadBalancer.DnsName
         Export:
             Name: !Sub ${EnvironmentName}-APP-LB-URL
 
