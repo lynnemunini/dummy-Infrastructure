@@ -12,10 +12,6 @@
 		"ParameterValue": "t3.medium"
 	},
 	{
-		"ParameterKey": "KeyName",
-		"ParameterValue": "Proj2"
-	},
-	{
 		"ParameterKey": "VolumeSize",
 		"ParameterValue": "10"
 	}

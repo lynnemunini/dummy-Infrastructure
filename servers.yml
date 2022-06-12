@@ -11,10 +11,6 @@ Parameters:
     UbuntuServerAMI:
         Description: Please enter the AMI ID for the Ubuntu Server
         Type: String
-
-    KeyName:
-        Description: Please enter the name of an existing EC2 KeyPair to enable SSH access to the instance
-        Type: String
     
     InstanceType:
         Description: Please enter the instance type you would like to use
@@ -83,9 +79,8 @@ Resources:
                         apt-get install apache2 -y
                         systemctl start apache2.service
                         cd /var/www/html
-                        echo "Udacity Demo Web Server Up and Running!" > index.html       
+                        echo "It works! Udagram, Udacity" > index.html       
             ImageId: !Sub "${UbuntuServerAMI}"
-            KeyName: !Sub "${KeyName}"
             SecurityGroups:
             - Ref: AppServerSecGroup
             InstanceType: !Sub "${InstanceType}"
