@@ -16,7 +16,7 @@ The network.yml file contains the network configuration, which includes the VPC 
 
 The network-parameters.json file contains the network parameters.
 
-[Server CloudFormation](server.yml)
+[Server CloudFormation](servers.yml)
 
 The server.yaml file contains the server configuration.
 
